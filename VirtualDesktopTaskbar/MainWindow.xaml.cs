@@ -291,7 +291,9 @@ public partial class MainWindow : Window
 
     private void AddTrayIcon()
     {
-        _trayIconHandle = CreateTrayIconHandle(16, ReadAccentColor());
+        // 优先用 exe 内嵌图标（与资源管理器中一致），缺失时回退到程序化绘制
+        IntPtr own = TryExtractOwnIcon(16);
+        _trayIconHandle = own != IntPtr.Zero ? own : CreateTrayIconHandle(16, ReadAccentColor());
         _trayData = new NOTIFYICONDATAW
         {
             cbSize = (uint)Marshal.SizeOf<NOTIFYICONDATAW>(),
@@ -303,6 +305,26 @@ public partial class MainWindow : Window
             szTip = "虚拟桌面切换器",
         };
         _trayAdded = Shell_NotifyIconW(NIM_ADD, ref _trayData);
+    }
+
+    /// <summary>从自身 exe 提取指定尺寸的内嵌图标；失败返回 IntPtr.Zero。</summary>
+    private static IntPtr TryExtractOwnIcon(int size)
+    {
+        try
+        {
+            string exe = Environment.ProcessPath ?? string.Empty;
+            if (exe.Length == 0) return IntPtr.Zero;
+            _ = ExtractIconExW(exe, 0, out IntPtr large, out IntPtr small, 1);
+            IntPtr pick = size <= 16 ? small : large;
+            if (pick == IntPtr.Zero) pick = size <= 16 ? large : small;
+            if (large != IntPtr.Zero && large != pick) _ = DestroyIcon(large);
+            if (small != IntPtr.Zero && small != pick) _ = DestroyIcon(small);
+            return pick;
+        }
+        catch
+        {
+            return IntPtr.Zero;
+        }
     }
 
     private void ReAddTrayIcon()

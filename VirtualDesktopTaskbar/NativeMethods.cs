@@ -98,6 +98,10 @@ internal static class NativeMethods
     [DllImport("user32.dll")]
     public static extern bool DestroyIcon(IntPtr hIcon);
 
+    /// <summary>从 exe/dll 提取图标：nIconIndex=0，同时取大(32)/小(16)两档。返回句柄需 DestroyIcon。</summary>
+    [DllImport("shell32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    public static extern uint ExtractIconExW(string lpszFile, int nIconIndex, out IntPtr phiconLarge, out IntPtr phiconSmall, uint nIcons);
+
     // ===== DWM =====
 
     [DllImport("dwmapi.dll")]
