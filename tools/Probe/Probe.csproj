@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWindowsForms>false</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Probe</RootNamespace>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- 与主程序共用同一份 interop 实现，保证“测到的”就是“用到的” -->
+    <Compile Include="..\..\VirtualDesktopTaskbar\NativeMethods.cs" Link="Interop\NativeMethods.cs" />
+    <Compile Include="..\..\VirtualDesktopTaskbar\Settings.cs" Link="Interop\Settings.cs" />
+    <Compile Include="..\..\VirtualDesktopTaskbar\Taskbar\NotificationAreaFinder.cs" Link="Interop\NotificationAreaFinder.cs" />
+    <Compile Include="..\..\VirtualDesktopTaskbar\Taskbar\TaskbarManager.cs" Link="Interop\TaskbarManager.cs" />
+    <Compile Include="..\..\VirtualDesktopTaskbar\VirtualDesktop\VirtualDesktopInterop.cs" Link="Interop\VirtualDesktopInterop.cs" />
+    <Compile Include="..\..\VirtualDesktopTaskbar\VirtualDesktop\VirtualDesktopManager.cs" Link="Interop\VirtualDesktopManager.cs" />
+    <Compile Include="..\..\VirtualDesktopTaskbar\VirtualDesktop\VirtualDesktopFallback.cs" Link="Interop\VirtualDesktopFallback.cs" />
+  </ItemGroup>
+
+</Project>

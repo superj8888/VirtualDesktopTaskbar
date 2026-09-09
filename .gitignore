@@ -1,0 +1,18 @@
+# ===== 构建产物（不入库）=====
+[Bb]in/
+[Oo]bj/
+publish/
+
+# ===== 第三方参考仓库（仅本地查阅：mntone / grabacr07 / ciantic / glazewm）=====
+tools/_ref/
+
+# ===== IDE / 用户配置 =====
+.vs/
+.idea/
+*.user
+*.suo
+*.sln.docstates
+
+# ===== 系统杂项 =====
+Thumbs.db
+Desktop.ini
