@@ -10,7 +10,7 @@
     <AssemblyName>VirtualDesktopTaskbar</AssemblyName>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>app.ico</ApplicationIcon>
-    <Version>1.0.1</Version>
+    <Version>1.0.2</Version>
     <Product>虚拟桌面切换器</Product>
     <Description>伪嵌入 Windows 11 任务栏的虚拟桌面切换小组件</Description>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
