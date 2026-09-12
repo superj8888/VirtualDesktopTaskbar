@@ -53,7 +53,11 @@ internal sealed class FullscreenWatcher
         if (DwmGetWindowAttribute(fg, DWMWA_CLOAKED, out uint cloaked, sizeof(uint)) == 0 && cloaked != 0)
             return false;
 
-        var monitor = MonitorFromWindow(fg, MONITOR_DEFAULTTONEAREST);
+        // 只在“前台窗口盖住小组件所在的任务栏显示器”时隐藏；
+        // 副屏全屏不影响主屏任务栏，不需要隐藏
+        var taskbar = NotificationAreaFinder.FindShellTrayWnd();
+        if (taskbar == IntPtr.Zero) return false;
+        var monitor = MonitorFromWindow(taskbar, MONITOR_DEFAULTTONEAREST);
         var mi = new MONITORINFO { cbSize = (uint)Marshal.SizeOf<MONITORINFO>() };
         if (!GetMonitorInfoW(monitor, ref mi)) return false;
         if (!GetWindowRect(fg, out var r)) return false;

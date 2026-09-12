@@ -181,7 +181,7 @@ public partial class MainWindow : Window
     private void RebuildButtons()
     {
         ButtonPanel.Children.Clear();
-        int count = Math.Min(_manager.DesktopCount, 9);
+        int count = VisibleButtonCount;
         for (int i = 0; i < count; i++)
         {
             int index = i;
@@ -207,7 +207,7 @@ public partial class MainWindow : Window
 
     private void OnManagerStateChanged()
     {
-        int expected = Math.Min(_manager.DesktopCount, 9);
+        int expected = VisibleButtonCount;
         if (ButtonPanel.Children.Count != expected)
         {
             RebuildButtons();
@@ -235,11 +235,26 @@ public partial class MainWindow : Window
 
     private void OnShellRecreated()
     {
-        // Explorer 重启：COM 已在 watcher 里重建，这里补窗口固定与托盘图标
-        if (_manager.Mode == VirtualDesktopManager.VdMode.Native)
-            _ = _manager.TryPinWindow(_hwnd);
+        // Explorer 重启后固定状态不可信：强制重新固定（COM 已由 watcher 重建）
+        _pinnedOk = false;
+        EnsurePinned();
         ReAddTrayIcon();
     }
+
+    /// <summary>未固定时的桌面跟踪兜底：把组件拉到当前桌面（文档化 API）。
+    /// 由 TaskbarWatcher 每个巡检周期调用。</summary>
+    internal void TrackOverlayDesktop()
+    {
+        if (_pinnedOk || _manager.Mode != VirtualDesktopManager.VdMode.Native) return;
+        IntPtr foreground = GetForegroundWindow();
+        if (foreground == IntPtr.Zero || foreground == _hwnd) return; // 菜单弹出中我们会短暂成为前台，跳过
+        if (_manager.IsWindowOnCurrentDesktop(_hwnd)) return;
+        if (_manager.MoveWindowToCurrentDesktop(_hwnd, foreground))
+            Log.Write("组件未固定：已跟随到当前桌面 (MoveWindowToDesktop)");
+    }
+
+    /// <summary>实际渲染的按钮数（与桌面数不同：上限 9，降级固定 4）。</summary>
+    internal int VisibleButtonCount => Math.Min(_manager.DesktopCount, 9);
 
     // ===== 主题 =====
 
@@ -342,6 +357,11 @@ public partial class MainWindow : Window
 
     private void ShowTrayMenu()
     {
+        // NOACTIVATE 窗口不持有前台时，弹出菜单点击外部不会自动关闭：
+        // 先把本窗口设为前台（托盘回调上下文内允许），菜单关闭后归还原前台窗口
+        IntPtr previousForeground = GetForegroundWindow();
+        _ = SetForegroundWindow(_hwnd);
+
         var menu = new ContextMenu { Placement = PlacementMode.MousePoint, PlacementTarget = this };
 
         menu.Items.Add(new MenuItem
@@ -370,6 +390,11 @@ public partial class MainWindow : Window
         menu.Items.Add(exit);
 
         menu.PlacementTarget = this;
+        menu.Closed += (_, _) =>
+        {
+            if (previousForeground != IntPtr.Zero && previousForeground != _hwnd)
+                _ = SetForegroundWindow(previousForeground);
+        };
         _trayMenu = menu; // 持有引用，防止弹出期间被回收
         menu.IsOpen = true;
     }

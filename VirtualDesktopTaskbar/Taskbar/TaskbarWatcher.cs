@@ -48,16 +48,18 @@ internal sealed class TaskbarWatcher
 
     private void Tick()
     {
-        _manager.Poll();          // 高亮同步（含 COM 断连自愈）
-        RepositionNow();          // 位置跟随（任务栏/托盘/DPI/显示器变化）
+        _manager.Poll();              // 高亮同步（含 COM 断连自愈）
+        RepositionNow();              // 位置跟随（任务栏/托盘/DPI/显示器变化）
         _window.EnsureAboveTaskbar(); // z 序保持：压回任务栏上方
+        _window.TrackOverlayDesktop();// 未固定时的桌面跟随兜底（文档化 API）
     }
 
     private void RepositionNow()
     {
         // 任务栏在主显示器；DPI 跟随窗口当前所在显示器
         double dpi = VisualTreeHelper.GetDpi(_window).PixelsPerDip;
+        // 宽度必须按“实际渲染的按钮数”计算（桌面数封顶 9），否则透明窗口会多占任务栏区域
         _window.NotifyAnchor(
-            TaskbarManager.TryCompute(_manager.DesktopCount, dpi, out var rect) ? rect : null);
+            TaskbarManager.TryCompute(_window.VisibleButtonCount, dpi, out var rect) ? rect : null);
     }
 }

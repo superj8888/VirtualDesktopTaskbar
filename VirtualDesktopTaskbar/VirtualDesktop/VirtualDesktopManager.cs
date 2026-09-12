@@ -170,8 +170,10 @@ internal sealed class VirtualDesktopManager : IDisposable
 
         if (Mode != VdMode.Native)
         {
-            VirtualDesktopFallback.SendSwitchTo(index);
-            CurrentIndex = index; // 乐观更新，无确认手段
+            // 降级：从乐观记录的当前索引相对移动（官方快捷键只有 ←/→，无数字直达）
+            int from = CurrentIndex < 0 ? 0 : CurrentIndex;
+            VirtualDesktopFallback.SendSwitchDelta(index - from);
+            CurrentIndex = index;
             StateChanged?.Invoke();
             return true;
         }

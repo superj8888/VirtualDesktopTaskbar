@@ -8,7 +8,7 @@ internal static class NativeMethods
     // ===== 窗口查找与几何 =====
 
     [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-    public static extern IntPtr FindWindowW(string lpClassName, string? lpWindowName);
+    public static extern IntPtr FindWindowW(string? lpClassName, string? lpWindowName);
 
     [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
     public static extern IntPtr FindWindowExW(IntPtr hWndParent, IntPtr hWndChildAfter, string lpszClass, string? lpszWindow);
@@ -30,6 +30,9 @@ internal static class NativeMethods
 
     [DllImport("user32.dll")]
     public static extern IntPtr GetForegroundWindow();
+
+    [DllImport("user32.dll", SetLastError = true)]
+    public static extern bool SetForegroundWindow(IntPtr hWnd);
 
     [DllImport("user32.dll")]
     public static extern bool IsWindowVisible(IntPtr hWnd);
@@ -265,6 +268,8 @@ internal static class NativeMethods
     public const uint KEYEVENTF_KEYUP = 0x0002;
     public const ushort VK_LWIN = 0x5B;
     public const ushort VK_LCONTROL = 0xA2;
+    public const ushort VK_LEFT = 0x25;
+    public const ushort VK_RIGHT = 0x27;
 
     public const uint MA_NOACTIVATE = 3;
 

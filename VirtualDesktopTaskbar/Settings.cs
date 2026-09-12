@@ -9,10 +9,15 @@ internal static class Settings
     private const string RunKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
     private const string ValueName = "VirtualDesktopTaskbar";
 
+    /// <summary>仅当注册表值存在且路径仍指向当前 exe 时才算已启用
+    /// （exe 移动/删除后显示未启用，用户重新勾选即覆盖为新路径）。</summary>
     public static bool IsAutostartEnabled()
     {
         using var key = Registry.CurrentUser.OpenSubKey(RunKeyPath);
-        return key?.GetValue(ValueName) is string;
+        if (key?.GetValue(ValueName) is not string value) return false;
+        var exePath = Environment.ProcessPath;
+        return exePath != null &&
+               value.Contains(exePath, StringComparison.OrdinalIgnoreCase);
     }
 
     public static void SetAutostart(bool enabled)
