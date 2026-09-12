@@ -87,7 +87,7 @@ VirtualDesktopManager        TaskbarManager              MainWindow
   - 当前桌面匹配用 `IVirtualDesktop::GetID` 的 GUID（内部对象 QI 表不含 IUnknown，不能用身份比较）
   - 窗口跨桌面常驻：`IApplicationViewCollection.GetViewForHwnd` + `IVirtualDesktopPinnedApps.PinView`
 - **自检**：启动只读自检（数量 → 枚举 → 当前桌面 GUID 匹配）全部通过才进 Native 模式
-- **兜底**：自检失败或运行中断连 → 按 `Win+Ctrl+←/→` 相对切换（官方没有“数字直达桌面”快捷键，`Win+Ctrl+数字` 是切换任务栏固定应用）；索引未知时先回桌面 1 再右移到目标；降级期间每 2 秒自动重试原生连接
+- **兜底**：自检失败或运行中断连 → 按 `Win+Ctrl+←/→` 相对切换（官方没有“数字直达桌面”快捷键，`Win+Ctrl+数字` 是切换任务栏固定应用）；索引未知时先回桌面 1 再右移到目标（覆盖 ≤10 个桌面），已知索引单次相对移动上限 16 步；降级期间每 2 秒自动重试原生连接
 - GUID 来源（交叉验证）：Ciantic/VirtualDesktopAccessor（MIT，实测 26100.2605 / 26200）、mntone/VirtualDesktop、Grabacr07/VirtualDesktop
 
 ### 任务栏定位（`Taskbar/`）

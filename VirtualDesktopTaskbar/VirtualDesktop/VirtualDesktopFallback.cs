@@ -17,26 +17,26 @@ namespace VirtualDesktopTaskbar.VirtualDesktop;
 /// </summary>
 internal static class VirtualDesktopFallback
 {
-    /// <summary>切到目标索引。knownIndex 为乐观记录的当前索引，-1 表示未知。</summary>
-    public static void SendSwitchTo(int targetIndex, int knownIndex)
+    /// <summary>切到目标索引。knownIndex 为乐观记录的当前索引，-1 表示未知。
+    /// 返回 false 表示 SendInput 注入失败（此时调用方不得更新索引基准）。</summary>
+    public static bool SendSwitchTo(int targetIndex, int knownIndex)
     {
         if (knownIndex < 0)
         {
             // 索引未知：先回桌面 1（9 次左键覆盖 ≤10 桌面的情况），再右移到目标
-            SendChord(NativeMethods.VK_LEFT, 9);
-            if (targetIndex > 0)
-                SendChord(NativeMethods.VK_RIGHT, targetIndex);
-            return;
+            if (!SendChord(NativeMethods.VK_LEFT, 9)) return false;
+            if (targetIndex > 0 && !SendChord(NativeMethods.VK_RIGHT, targetIndex)) return false;
+            return true;
         }
 
         int delta = targetIndex - knownIndex;
-        if (delta == 0) return;
-        SendChord(delta > 0 ? NativeMethods.VK_RIGHT : NativeMethods.VK_LEFT,
+        if (delta == 0) return true;
+        return SendChord(delta > 0 ? NativeMethods.VK_RIGHT : NativeMethods.VK_LEFT,
             Math.Min(Math.Abs(delta), 16));
     }
 
-    /// <summary>连发 count 次 Win+Ctrl+方向键，事件间留 25ms 间隔。</summary>
-    private static void SendChord(ushort arrowKey, int count)
+    /// <summary>连发 count 次 Win+Ctrl+方向键，事件间留 25ms 间隔。任一次注入失败即中止并返回 false。</summary>
+    private static bool SendChord(ushort arrowKey, int count)
     {
         for (int n = 0; n < count; n++)
         {
@@ -53,9 +53,11 @@ internal static class VirtualDesktopFallback
             for (int i = 0; i < inputs.Length; i++)
             {
                 if (delays[i] > 0) Thread.Sleep(delays[i]);
-                _ = SendInput(1, [inputs[i]], Marshal.SizeOf<INPUT>());
+                if (SendInput(1, [inputs[i]], Marshal.SizeOf<INPUT>()) != 1)
+                    return false;
             }
         }
+        return true;
     }
 
     private static INPUT Key(ushort vk, bool down) => new()
