@@ -170,9 +170,10 @@ internal sealed class VirtualDesktopManager : IDisposable
 
         if (Mode != VdMode.Native)
         {
-            // 降级：从乐观记录的当前索引相对移动（官方快捷键只有 ←/→，无数字直达）
-            int from = CurrentIndex < 0 ? 0 : CurrentIndex;
-            VirtualDesktopFallback.SendSwitchDelta(index - from);
+            // 降级：相对移动（官方快捷键只有 ←/→，无数字直达）。
+            // CurrentIndex 为乐观值；运行中降级会保留最后已知索引，从未连上 COM 时为 -1
+            //（此时兜底策略是先回桌面 1 再右移，见 VirtualDesktopFallback）。
+            VirtualDesktopFallback.SendSwitchTo(index, CurrentIndex);
             CurrentIndex = index;
             StateChanged?.Invoke();
             return true;
@@ -380,7 +381,8 @@ internal sealed class VirtualDesktopManager : IDisposable
         Mode = VdMode.HotkeyFallback;
         ModeDetail = reason;
         DesktopCount = 4;
-        CurrentIndex = -1;
+        // 保留 CurrentIndex：运行中降级时它是最后已知索引，是降级相对切换的基准；
+        // 从未连上 COM 时保持初始值 -1（切换走“先回桌面 1”策略）
         Log.Write("降级为键盘模式: " + reason);
     }
 

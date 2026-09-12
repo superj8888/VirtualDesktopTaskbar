@@ -408,7 +408,7 @@ public partial class MainWindow : Window
         var data = _trayData;
         data.uFlags |= NIF_INFO;
         data.szInfoTitle = "虚拟桌面切换器";
-        data.szInfo = "原生桌面控制不可用，已改用键盘模拟模式 (Win+Ctrl+数字)。";
+        data.szInfo = "原生桌面控制不可用，已切换为备用模式：点击按钮通过 Win+Ctrl+←/→ 相对切换，高亮仅供参考。";
         data.dwInfoFlags = NIIF_INFO;
         _ = Shell_NotifyIconW(NIM_MODIFY, ref data);
     }
