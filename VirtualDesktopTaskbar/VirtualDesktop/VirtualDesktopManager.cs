@@ -34,6 +34,9 @@ internal sealed class VirtualDesktopManager : IDisposable
     private int _fallbackTickCount;
     private const int FallbackRetryTicks = 8; // 250ms × 8 = 2s
 
+    /// <summary>降级模式单次相对移动的步数上限（超出拒绝，索引基准保持有效）。</summary>
+    private const int RelativeSwitchStepLimit = 16;
+
     // ===== 初始化 =====
 
     /// <summary>初始化（或 Explorer 重启后重建）COM 连接。成功进入 Native 模式。</summary>
@@ -163,7 +166,10 @@ internal sealed class VirtualDesktopManager : IDisposable
 
     // ===== 切换 =====
 
-    /// <summary>切换到指定桌面。Native 模式走 COM 并校验结果；降级模式模拟 Win+Ctrl+数字。</summary>
+    /// <summary>
+    /// 切换到指定桌面。Native 模式走 COM 并校验结果；
+    /// 降级模式用 Win+Ctrl+←/→ 相对切换（结果基于乐观索引）。
+    /// </summary>
     public bool SwitchTo(int index)
     {
         if (index < 0) return false;
@@ -173,12 +179,23 @@ internal sealed class VirtualDesktopManager : IDisposable
             // 降级：相对移动（官方快捷键只有 ←/→，无数字直达）。
             // CurrentIndex 为乐观值；运行中降级会保留最后已知索引，从未连上 COM 时为 -1
             //（此时兜底策略是先回桌面 1 再右移，见 VirtualDesktopFallback）。
-            if (!VirtualDesktopFallback.SendSwitchTo(index, CurrentIndex))
+            if (CurrentIndex >= 0 && Math.Abs(index - CurrentIndex) > RelativeSwitchStepLimit)
             {
-                // 注入失败：索引基准不可信，不更新也不报成功
-                Log.Write("降级切换：SendInput 注入失败，保留原索引基准");
+                // 超出单次相对移动上限：拒绝切换（未发送任何按键，索引基准仍有效）
+                Log.Write($"降级切换：目标超出相对移动上限（{RelativeSwitchStepLimit} 步），已拒绝");
                 return false;
             }
+
+            if (!VirtualDesktopFallback.SendSwitchTo(index, CurrentIndex))
+            {
+                // 注入失败：已发送的按键可能造成部分移动，实际位置不可知 → 索引置为未知
+                //（下一次点击走“先回桌面 1”策略自愈）
+                Log.Write("降级切换：SendInput 注入失败，实际位置不可知，索引置为未知");
+                CurrentIndex = -1;
+                StateChanged?.Invoke();
+                return false;
+            }
+
             CurrentIndex = index;
             StateChanged?.Invoke();
             return true;
